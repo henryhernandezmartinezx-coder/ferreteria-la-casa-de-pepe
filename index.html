@@ -4,226 +4,388 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#183b2b">
+  <meta name="theme-color" content="#10263a">
   <title>Ferretería La Casa de Pepe</title>
 
   <style>
-    :root {
-      --verde: #183b2b;
-      --verde-claro: #286447;
-      --fondo: #f4f6f3;
-      --blanco: #ffffff;
-    }
-
     * { box-sizing: border-box; }
 
     body {
-      margin: 0;
       font-family: Arial, sans-serif;
-      background: var(--fondo);
-      color: #202820;
-    }
-
-    header {
-      background: var(--verde);
-      color: white;
+      min-height: 100vh;
+      margin: 0;
       padding: 24px 16px;
-      text-align: center;
+      color: #fff;
+      background-color: #10263a;
+      background-image:
+        linear-gradient(rgba(8,22,38,.58), rgba(8,22,38,.65));
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
     }
-
-    header h1 {
-      margin: 0 0 8px;
-      font-size: clamp(23px, 5vw, 34px);
-    }
-
-    header p { margin: 0; }
 
     main {
-      width: min(1100px, 94%);
-      margin: 22px auto;
-    }
-
-    .estado {
-      margin-bottom: 14px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      background: white;
-      font-size: 14px;
-    }
-
-    .controles {
-      display: grid;
-      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    input, select {
       width: 100%;
-      min-width: 0;
-      padding: 13px;
-      border: 1px solid #cbd4cb;
-      border-radius: 8px;
-      background: white;
-      font-size: 16px;
+      max-width: 800px;
+      margin: 0 auto;
     }
 
-    #contador {
-      margin: 12px 0;
-      color: #4b574c;
-      font-size: 14px;
+    h1 {
+      text-align: center;
+      color: #fff;
+      text-shadow: 0 2px 5px #102030;
+      margin: 8px 0;
+      font-size: clamp(23px, 4vw, 32px);
     }
 
-    #productos {
+    .subtitulo {
+      text-align: center;
+      text-shadow: 0 1px 4px #102030;
+      margin: 8px 0 20px;
+    }
+
+    #busqueda {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      font-size: 17px;
+      border: 2px solid #d4a13c;
+      border-radius: 9px;
+      background: #fff;
+      color: #202938;
+      outline-offset: 2px;
+    }
+
+    .titulo-categorias {
+      margin: 15px 0 8px;
+      font-weight: bold;
+      text-shadow: 0 1px 3px #102030;
+    }
+
+    .botones {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+      margin-bottom: 12px;
     }
 
-    .producto {
-      padding: 16px;
-      background: white;
-      border: 1px solid #e0e6df;
-      border-radius: 10px;
-      box-shadow: 0 2px 7px #0000000a;
+    .botones button {
+      padding: 11px 5px;
+      border: 0;
+      border-radius: 8px;
+      background: #263746;
+      color: #fff;
+      font-weight: bold;
+      font-size: 13px;
+      cursor: pointer;
+      min-height: 39px;
+    }
+
+    .botones button:hover,
+    .botones button.activo {
+      background: #e99d13;
+      color: #202938;
+    }
+
+    #estado {
+      margin: 12px 0;
+      text-align: center;
+      color: #fff;
+      font-size: 13px;
+      text-shadow: 0 1px 4px #102030;
       overflow-wrap: anywhere;
     }
 
-    .producto h3 {
-      margin: 0 0 12px;
+    #titulo-resultados {
+      margin: 14px 0 8px;
       font-size: 17px;
-      line-height: 1.4;
+      text-shadow: 0 1px 4px #102030;
     }
 
-    .categoria {
-      display: inline-block;
-      margin-bottom: 10px;
-      padding: 5px 8px;
-      border-radius: 5px;
-      background: #e5efe7;
-      color: var(--verde);
-      font-size: 12px;
+    .producto {
+      background: rgba(255,255,255,.97);
+      color: #202938;
+      border-left: 4px solid #e99d13;
+      border-radius: 9px;
+      padding: 13px;
+      margin: 9px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,.22);
+      overflow-wrap: anywhere;
     }
 
-    .precio {
-      margin: 10px 0;
-      color: var(--verde-claro);
-      font-size: 19px;
+    .nombre {
+      font-size: 15px;
       font-weight: bold;
+      margin-bottom: 8px;
+      text-transform: uppercase;
     }
 
-    .stock {
-      margin: 0;
-      color: #4b574c;
-      font-size: 14px;
+    .datos {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
     }
 
-    .mensaje {
-      grid-column: 1 / -1;
-      padding: 25px;
-      text-align: center;
-      background: white;
-      border-radius: 10px;
+    .dato {
+      background: #f0f1f3;
+      border-radius: 6px;
+      padding: 8px;
+      min-width: 0;
     }
 
-    footer {
-      padding: 22px;
-      color: #667066;
-      text-align: center;
+    .etiqueta {
+      display: block;
+      color: #5d6570;
+      font-size: 11px;
+      margin-bottom: 3px;
+    }
+
+    .valor {
+      display: block;
+      font-weight: bold;
       font-size: 13px;
+      overflow-wrap: anywhere;
     }
 
-    @media (max-width: 520px) {
-      .controles { grid-template-columns: 1fr; }
-      #productos { grid-template-columns: 1fr; }
+    #mas-resultados {
+      display: none;
+      width: 100%;
+      padding: 12px;
+      margin: 12px 0;
+      border: 0;
+      border-radius: 8px;
+      background: #e99d13;
+      color: #202938;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    @media (max-width: 420px) {
+      body { padding: 18px 10px; }
+      .botones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .datos { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 320px) {
+      .datos { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 
 <body>
-  <header>
-    <h1>Ferretería La Casa de Pepe</h1>
-    <p>Catálogo de productos</p>
-  </header>
-
   <main>
-    <div id="estado" class="estado" role="status">
-      Cargando catálogo...
+    <h1>Ferretería La Casa de Pepe</h1>
+
+    <div class="subtitulo">
+      Consulta de productos, existencias y precios
     </div>
 
-    <div class="controles">
-      <input
-        id="busqueda"
-        type="search"
-        placeholder="Buscar un producto..."
-        aria-label="Buscar productos"
-      >
+    <input
+      id="busqueda"
+      type="search"
+      placeholder="Buscar un producto..."
+      autocomplete="off"
+      aria-label="Buscar productos"
+    >
 
-      <select id="categoria" aria-label="Filtrar por categoría">
-        <option value="">Todas las categorías</option>
-      </select>
+    <div class="titulo-categorias">Categorías</div>
+
+    <div class="botones" id="botones">
+      <button type="button" data-categoria="Todos" class="activo">Todos</button>
+      <button type="button" data-categoria="Tornilleria">Tornillería</button>
+      <button type="button" data-categoria="Electricidad">Electricidad</button>
+      <button type="button" data-categoria="Herramientas">Herramientas</button>
+      <button type="button" data-categoria="Plomeria">Plomería</button>
+      <button type="button" data-categoria="Electrodomesticos">Electrodomésticos</button>
     </div>
 
-    <div id="contador"></div>
-    <section id="productos" aria-live="polite">
-      <div class="mensaje">Cargando productos...</div>
-    </section>
+    <div id="estado" role="status" aria-live="polite">
+      Preparando catálogo...
+    </div>
+
+    <h2 id="titulo-resultados">Productos</h2>
+    <div id="resultados"></div>
+
+    <button id="mas-resultados" type="button">
+      Mostrar más productos
+    </button>
   </main>
-
-  <footer>
-    Ferretería La Casa de Pepe
-  </footer>
 
   <script>
     const URL_APPS_SCRIPT =
       "https://script.google.com/macros/s/AKfycbzDQvqR-gAlHqE-NtH-FIF7vsZEo0EaEE1oHY8ka4IDjTqi7TZ9A3rKooJ0ZGHiDXcsxg/exec";
 
     const CLAVE_CACHE = "casaPepe_catalogo_v1";
+    const CLAVE_IMAGEN = "casaPepe_imagen_fondo_v1";
+    const LIMITE_INICIAL = 100;
+
+    const CATEGORIAS = {
+      Tornilleria: [
+        "tornillo", "cancamo", "tuerca", "tuercas",
+        "arandela", "arandela de presion", "perno", "pernos",
+        "clavo", "puntilla", "tirafondo", "expansion"
+      ],
+      Electricidad: [
+        "cable", "electrico", "electricidad", "breaker",
+        "caja", "brequera", "tomacorriente", "interruptor",
+        "enchufe", "bombillo", "solar", "led", "lampara",
+        "coaxial", "perrito", "fusible",
+        "conector electrico", "cinta aislante", "canaleta",
+        "toma corriente", "socket", "apagador", "tape",
+        "terminal electrico", "terminales electricos",
+        "royal cord", "espiga", "adaptador", "plano",
+        "telefono", "cargador", "cuchilla", "catado"
+      ],
+      Herramientas: [
+        "martillo", "alicate", "pinza", "destornillador",
+        "llave inglesa", "serrucho", "sierra", "lima",
+        "taladro", "broca", "cinta metrica", "metro",
+        "nivel", "stilson", "cincel", "prensa", "tenaza",
+        "brocha", "llave ajustable"
+      ],
+      Plomeria: [
+        "zapatilla", "pvc", "codo", "empotrar", "teflon",
+        "nudo", "niple", "tee", "yee", "tubo", "1/2",
+        '1"', "3/4", "tiro rapido", "anti hongo"
+      ],
+      Electrodomesticos: [
+        "ventilador", "refrigerador", "nevera", "lavadora",
+        "inflarrojo", "batidora", "split", "cafetera",
+        "plancha bosina", "microondas", "televisor", "olla"
+      ]
+    };
 
     let catalogo = [];
+    let filtrados = [];
+    let categoriaActiva = "Todos";
+    let temporizador = null;
+    let cantidadVisible = LIMITE_INICIAL;
 
+    const entrada = document.getElementById("busqueda");
     const estado = document.getElementById("estado");
-    const contenedor = document.getElementById("productos");
-    const busqueda = document.getElementById("busqueda");
-    const filtroCategoria = document.getElementById("categoria");
-    const contador = document.getElementById("contador");
+    const resultados = document.getElementById("resultados");
+    const titulo = document.getElementById("titulo-resultados");
+    const botonMas = document.getElementById("mas-resultados");
 
-    function pedirJSONP(accion, tiempoLimite = 15000) {
+    function normalizar(valor) {
+      return String(valor || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+    }
+
+    function distancia(a, b) {
+      const matriz = Array.from(
+        { length: a.length + 1 },
+        () => Array(b.length + 1).fill(0)
+      );
+
+      for (let i = 0; i <= a.length; i++) matriz[i][0] = i;
+      for (let j = 0; j <= b.length; j++) matriz[0][j] = j;
+
+      for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+          const costo = a[i - 1] === b[j - 1] ? 0 : 1;
+
+          matriz[i][j] = Math.min(
+            matriz[i - 1][j] + 1,
+            matriz[i][j - 1] + 1,
+            matriz[i - 1][j - 1] + costo
+          );
+        }
+      }
+
+      return matriz[a.length][b.length];
+    }
+
+    function coincideBusqueda(producto, consulta) {
+      if (!consulta) return true;
+
+      const nombre = normalizar(producto);
+
+      if (nombre.includes(consulta)) return true;
+
+      const palabrasConsulta = consulta.split(/\s+/).filter(Boolean);
+      const palabrasNombre = nombre.split(/[\s\-_/]+/).filter(Boolean);
+
+      return palabrasConsulta.every(palabra => {
+        if (nombre.includes(palabra)) return true;
+        if (palabra.length < 4) return false;
+
+        return palabrasNombre.some(p => {
+          const limite = palabra.length >= 6 ? 2 : 1;
+
+          return Math.abs(p.length - palabra.length) <= limite &&
+            distancia(palabra, p) <= limite;
+        });
+      });
+    }
+
+    function coincideCategoria(producto, categoria) {
+      if (categoria === "Todos") return true;
+
+      const terminos = CATEGORIAS[categoria] || [];
+      const nombre = normalizar(producto);
+
+      if (
+        normalizar(categoria) === "electrodomesticos" &&
+        /\bcriolla\b/.test(nombre)
+      ) {
+        return false;
+      }
+
+      return terminos.some(terminoOriginal => {
+        const termino = normalizar(terminoOriginal);
+
+        if (termino === "t" || termino === "y") {
+          return new RegExp(
+            "(^|[^a-z0-9])" + termino + "($|[^a-z0-9])"
+          ).test(nombre);
+        }
+
+        return nombre.includes(termino);
+      });
+    }
+
+    function pedirJSONP(accion, tiempoLimite = 25000) {
       return new Promise((resolve, reject) => {
-        const nombreCallback =
-          "casaPepeCallback_" + Date.now() + "_" +
+        const callback =
+          "casaPepe_" + Date.now() + "_" +
           Math.floor(Math.random() * 100000);
 
         const script = document.createElement("script");
-        const temporizador = setTimeout(() => terminar(
+
+        const temporizadorError = setTimeout(() => terminar(
           new Error("Se agotó el tiempo de conexión.")
         ), tiempoLimite);
 
         function terminar(error, datos) {
-          clearTimeout(temporizador);
-          delete window[nombreCallback];
+          clearTimeout(temporizadorError);
+          delete window[callback];
           script.remove();
 
           if (error) reject(error);
           else resolve(datos);
         }
 
-        window[nombreCallback] = datos => terminar(null, datos);
+        window[callback] = datos => terminar(null, datos);
 
         script.onerror = () => terminar(
-          new Error("No se pudo conectar con el catálogo.")
+          new Error("No se pudo conectar con Google Apps Script.")
         );
 
         script.src = URL_APPS_SCRIPT +
           "?action=" + encodeURIComponent(accion) +
-          "&callback=" + encodeURIComponent(nombreCallback) +
+          "&callback=" + encodeURIComponent(callback) +
           "&t=" + Date.now();
 
         document.head.appendChild(script);
       });
     }
 
-    function normalizar(datos) {
+    function normalizarCatalogo(datos) {
       if (Array.isArray(datos)) return datos;
 
       if (datos && Array.isArray(datos.productos)) {
@@ -237,35 +399,80 @@
       return [];
     }
 
-    function valor(producto, posiblesNombres) {
-      for (const nombre of posiblesNombres) {
-        if (producto[nombre] !== undefined &&
-            producto[nombre] !== null) {
-          return producto[nombre];
-        }
+    function actualizar() {
+      const consulta = normalizar(entrada.value);
+
+      filtrados = catalogo.filter(p =>
+        p &&
+        typeof p.producto === "string" &&
+        coincideCategoria(p.producto, categoriaActiva) &&
+        coincideBusqueda(p.producto, consulta)
+      );
+
+      cantidadVisible = LIMITE_INICIAL;
+      mostrarResultados();
+    }
+
+    function mostrarResultados() {
+      resultados.replaceChildren();
+
+      const total = filtrados.length;
+      const visibles = filtrados.slice(0, cantidadVisible);
+
+      titulo.textContent =
+        (categoriaActiva === "Todos"
+          ? "Productos"
+          : "Categoría: " + categoriaActiva) +
+        " (" + total.toLocaleString("es") + ")";
+
+      visibles.forEach(p => {
+        const tarjeta = document.createElement("article");
+        tarjeta.className = "producto";
+
+        const nombre = document.createElement("div");
+        nombre.className = "nombre";
+        nombre.textContent = p.producto;
+        tarjeta.appendChild(nombre);
+
+        const datos = document.createElement("div");
+        datos.className = "datos";
+
+        datos.appendChild(
+          crearDato("Existencia", p.existencia || "—")
+        );
+
+        datos.appendChild(
+          crearDato("Precio", p.precio || "Consultar")
+        );
+
+        tarjeta.appendChild(datos);
+        resultados.appendChild(tarjeta);
+      });
+
+      if (!total) {
+        const mensaje = document.createElement("p");
+        mensaje.textContent = "No se encontraron productos.";
+        resultados.appendChild(mensaje);
       }
-      return "";
+
+      botonMas.style.display =
+        total > visibles.length ? "block" : "none";
     }
 
-    function obtenerNombre(p) {
-      if (Array.isArray(p)) return p[0] ?? "";
-      if (typeof p === "string") return p;
-      return valor(p, ["producto", "nombre", "Producto", "Nombre", "name"]);
-    }
+    function crearDato(etiqueta, valor) {
+      const caja = document.createElement("div");
+      caja.className = "dato";
 
-    function obtenerStock(p) {
-      if (Array.isArray(p)) return p[1] ?? "";
-      return valor(p, ["stock", "existencia", "cantidad", "Stock", "Existencia"]);
-    }
+      const tituloDato = document.createElement("span");
+      tituloDato.className = "etiqueta";
+      tituloDato.textContent = etiqueta;
 
-    function obtenerPrecio(p) {
-      if (Array.isArray(p)) return p[2] ?? "";
-      return valor(p, ["precio", "Precio", "price"]);
-    }
+      const valorDato = document.createElement("span");
+      valorDato.className = "valor";
+      valorDato.textContent = valor;
 
-    function obtenerCategoria(p) {
-      if (Array.isArray(p)) return p[3] ?? "";
-      return valor(p, ["categoria", "categoría", "Categoria", "Categoría"]);
+      caja.append(tituloDato, valorDato);
+      return caja;
     }
 
     function guardarCatalogo(datos) {
@@ -274,167 +481,172 @@
           fecha: new Date().toISOString(),
           datos: datos
         }));
-      } catch (e) {
-        console.warn("No se pudo guardar la copia local.", e);
+      } catch (error) {
+        console.error("No se pudo guardar el catálogo:", error);
       }
     }
 
     function cargarCopiaLocal() {
       try {
-        const copia = JSON.parse(localStorage.getItem(CLAVE_CACHE));
-        if (copia && Array.isArray(copia.datos)) {
-          catalogo = copia.datos;
-          mostrarCategorias();
-          mostrarProductos();
-          estado.textContent =
-            "Sin conexión: mostrando el último catálogo guardado.";
-          return true;
-        }
-      } catch (e) {
-        console.warn("No se pudo leer la copia local.", e);
+        const guardado = localStorage.getItem(CLAVE_CACHE);
+        if (!guardado) return false;
+
+        const copia = JSON.parse(guardado);
+
+        const datos = Array.isArray(copia)
+          ? copia
+          : copia && Array.isArray(copia.datos)
+            ? copia.datos
+            : [];
+
+        catalogo = datos.filter(p =>
+          p && typeof p.producto === "string"
+        );
+
+        if (!catalogo.length) return false;
+
+        actualizar();
+
+        estado.textContent =
+          "Catálogo local recuperado: " +
+          catalogo.length.toLocaleString("es") +
+          " productos.";
+
+        return true;
+      } catch (error) {
+        console.error("Error al recuperar el catálogo:", error);
+        return false;
       }
-      return false;
     }
 
     async function actualizarCatalogo() {
       try {
         const datos = await pedirJSONP("catalogo");
-        const lista = normalizar(datos);
+        const lista = normalizarCatalogo(datos);
 
         if (!lista.length) {
-          throw new Error("El catálogo recibido está vacío o tiene un formato distinto.");
+          throw new Error("El catálogo recibido está vacío.");
         }
 
-        catalogo = lista;
-        guardarCatalogo(lista);
-        mostrarCategorias();
-        mostrarProductos();
+        catalogo = lista.filter(p =>
+          p && typeof p.producto === "string"
+        );
+
+        guardarCatalogo(catalogo);
+        actualizar();
 
         estado.textContent =
-          "Catálogo actualizado desde Google Sheets.";
+          "Catálogo actualizado desde Google Sheets: " +
+          catalogo.length.toLocaleString("es") +
+          " productos.";
       } catch (error) {
-        if (!cargarCopiaLocal()) {
+        if (catalogo.length) {
           estado.textContent =
-            "No se pudo cargar el catálogo. Comprueba tu conexión.";
-          contenedor.innerHTML =
-            '<div class="mensaje">No hay un catálogo guardado disponible.</div>';
+            "Sin actualización del servidor. " +
+            "Usando los productos guardados.";
+        } else {
+          estado.textContent =
+            "No se pudo cargar el catálogo. Comprueba internet.";
         }
+
         console.error(error);
       }
     }
 
-    function mostrarCategorias() {
-      const seleccionAnterior = filtroCategoria.value;
-      const categorias = [...new Set(
-        catalogo.map(obtenerCategoria)
-          .map(c => String(c).trim())
-          .filter(Boolean)
-      )].sort((a, b) => a.localeCompare(b, "es"));
-
-      filtroCategoria.innerHTML =
-        '<option value="">Todas las categorías</option>';
-
-      categorias.forEach(categoria => {
-        const opcion = document.createElement("option");
-        opcion.value = categoria;
-        opcion.textContent = categoria;
-        filtroCategoria.appendChild(opcion);
-      });
-
-      if (categorias.includes(seleccionAnterior)) {
-        filtroCategoria.value = seleccionAnterior;
-      }
-    }
-
-    function textoSeguro(valor) {
-      return String(valor ?? "");
-    }
-
-    function mostrarProductos() {
-      const termino = busqueda.value.trim().toLocaleLowerCase("es");
-      const categoriaElegida = filtroCategoria.value;
-
-      const encontrados = catalogo.filter(p => {
-        const nombre = textoSeguro(obtenerNombre(p));
-        const categoria = textoSeguro(obtenerCategoria(p));
-
-        return nombre.toLocaleLowerCase("es").includes(termino) &&
-          (!categoriaElegida || categoria === categoriaElegida);
-      });
-
-      contador.textContent =
-        encontrados.length + (encontrados.length === 1
-          ? " producto encontrado"
-          : " productos encontrados");
-
-      contenedor.replaceChildren();
-
-      if (!encontrados.length) {
-        const mensaje = document.createElement("div");
-        mensaje.className = "mensaje";
-        mensaje.textContent = "No se encontraron productos.";
-        contenedor.appendChild(mensaje);
+    function aplicarImagenFondo(imagen) {
+      if (typeof imagen !== "string" ||
+          !imagen.startsWith("data:image/")) {
         return;
       }
 
-      encontrados.forEach(p => {
-        const tarjeta = document.createElement("article");
-        tarjeta.className = "producto";
-
-        const nombre = document.createElement("h3");
-        nombre.textContent = textoSeguro(obtenerNombre(p));
-
-        tarjeta.appendChild(nombre);
-
-        const categoria = textoSeguro(obtenerCategoria(p));
-        if (categoria) {
-          const etiqueta = document.createElement("span");
-          etiqueta.className = "categoria";
-          etiqueta.textContent = categoria;
-          tarjeta.appendChild(etiqueta);
-        }
-
-        const precio = document.createElement("p");
-        precio.className = "precio";
-        const valorPrecio = obtenerPrecio(p);
-        precio.textContent = valorPrecio === ""
-          ? "Precio no disponible"
-          : textoSeguro(valorPrecio);
-        tarjeta.appendChild(precio);
-
-        const stock = document.createElement("p");
-        stock.className = "stock";
-        const valorStock = obtenerStock(p);
-        stock.textContent = valorStock === ""
-          ? "Existencia no disponible"
-          : "Existencia: " + textoSeguro(valorStock);
-        tarjeta.appendChild(stock);
-
-        contenedor.appendChild(tarjeta);
-      });
+      document.body.style.backgroundImage =
+        'linear-gradient(rgba(8,22,38,.58), rgba(8,22,38,.65)), url("' +
+        imagen + '")';
     }
 
-    busqueda.addEventListener("input", mostrarProductos);
-    filtroCategoria.addEventListener("change", mostrarProductos);
+    function cargarImagenGuardada() {
+      try {
+        const imagen = localStorage.getItem(CLAVE_IMAGEN);
+        if (imagen) aplicarImagenFondo(imagen);
+      } catch (error) {
+        console.warn("No se pudo recuperar la imagen guardada.", error);
+      }
+    }
 
-    // Mostrar primero la copia guardada; luego intentar actualizar.
-    cargarCopiaLocal();
-    actualizarCatalogo();
+    async function actualizarImagenFondo() {
+      try {
+        const respuesta = await pedirJSONP("imagen", 30000);
 
-    // Intentar actualizar cuando vuelve la conexión.
-    window.addEventListener("online", actualizarCatalogo);
-    // Activar el funcionamiento sin conexión.
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js")
-      .then(() => {
-        console.log("Modo sin conexión preparado.");
-      })
-      .catch(error => {
-        console.error("Error al activar el modo sin conexión:", error);
+        const imagen = typeof respuesta === "string"
+          ? respuesta
+          : respuesta && (respuesta.imagen || respuesta.url);
+
+        if (!imagen || !String(imagen).startsWith("data:image/")) {
+          throw new Error("La respuesta no contiene una imagen válida.");
+        }
+
+        aplicarImagenFondo(imagen);
+
+        try {
+          localStorage.setItem(CLAVE_IMAGEN, imagen);
+        } catch (error) {
+          console.warn(
+            "La imagen se mostró, pero no pudo guardarse para uso sin conexión.",
+            error
+          );
+        }
+      } catch (error) {
+        console.warn("No se pudo actualizar la imagen de fondo:", error);
+      }
+    }
+
+    document.getElementById("botones").addEventListener("click", evento => {
+      const boton = evento.target.closest("button[data-categoria]");
+      if (!boton) return;
+
+      categoriaActiva = boton.dataset.categoria;
+
+      document.querySelectorAll("#botones button").forEach(b => {
+        b.classList.toggle("activo", b === boton);
       });
-  });
-}
+
+      entrada.value = "";
+      actualizar();
+    });
+
+    entrada.addEventListener("input", () => {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(actualizar, 120);
+    });
+
+    botonMas.addEventListener("click", () => {
+      cantidadVisible += LIMITE_INICIAL;
+      mostrarResultados();
+    });
+
+    // Recuperar primero la copia guardada en el dispositivo.
+    cargarImagenGuardada();
+    cargarCopiaLocal();
+
+    // Después intentar actualizar los datos y la imagen.
+    actualizarCatalogo();
+    actualizarImagenFondo();
+
+    window.addEventListener("online", () => {
+      actualizarCatalogo();
+      actualizarImagenFondo();
+    });
+
+    // Activar el funcionamiento sin conexión.
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js")
+          .then(() => console.log("Modo sin conexión preparado."))
+          .catch(error => console.error(
+            "Error al activar el modo sin conexión:", error
+          ));
+      });
+    }
   </script>
 </body>
 </html>
