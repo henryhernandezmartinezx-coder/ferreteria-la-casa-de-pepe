@@ -1,0 +1,428 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#183b2b">
+  <title>Ferretería La Casa de Pepe</title>
+
+  <style>
+    :root {
+      --verde: #183b2b;
+      --verde-claro: #286447;
+      --fondo: #f4f6f3;
+      --blanco: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--fondo);
+      color: #202820;
+    }
+
+    header {
+      background: var(--verde);
+      color: white;
+      padding: 24px 16px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: clamp(23px, 5vw, 34px);
+    }
+
+    header p { margin: 0; }
+
+    main {
+      width: min(1100px, 94%);
+      margin: 22px auto;
+    }
+
+    .estado {
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: white;
+      font-size: 14px;
+    }
+
+    .controles {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    input, select {
+      width: 100%;
+      min-width: 0;
+      padding: 13px;
+      border: 1px solid #cbd4cb;
+      border-radius: 8px;
+      background: white;
+      font-size: 16px;
+    }
+
+    #contador {
+      margin: 12px 0;
+      color: #4b574c;
+      font-size: 14px;
+    }
+
+    #productos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+    }
+
+    .producto {
+      padding: 16px;
+      background: white;
+      border: 1px solid #e0e6df;
+      border-radius: 10px;
+      box-shadow: 0 2px 7px #0000000a;
+      overflow-wrap: anywhere;
+    }
+
+    .producto h3 {
+      margin: 0 0 12px;
+      font-size: 17px;
+      line-height: 1.4;
+    }
+
+    .categoria {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 5px 8px;
+      border-radius: 5px;
+      background: #e5efe7;
+      color: var(--verde);
+      font-size: 12px;
+    }
+
+    .precio {
+      margin: 10px 0;
+      color: var(--verde-claro);
+      font-size: 19px;
+      font-weight: bold;
+    }
+
+    .stock {
+      margin: 0;
+      color: #4b574c;
+      font-size: 14px;
+    }
+
+    .mensaje {
+      grid-column: 1 / -1;
+      padding: 25px;
+      text-align: center;
+      background: white;
+      border-radius: 10px;
+    }
+
+    footer {
+      padding: 22px;
+      color: #667066;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    @media (max-width: 520px) {
+      .controles { grid-template-columns: 1fr; }
+      #productos { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Ferretería La Casa de Pepe</h1>
+    <p>Catálogo de productos</p>
+  </header>
+
+  <main>
+    <div id="estado" class="estado" role="status">
+      Cargando catálogo...
+    </div>
+
+    <div class="controles">
+      <input
+        id="busqueda"
+        type="search"
+        placeholder="Buscar un producto..."
+        aria-label="Buscar productos"
+      >
+
+      <select id="categoria" aria-label="Filtrar por categoría">
+        <option value="">Todas las categorías</option>
+      </select>
+    </div>
+
+    <div id="contador"></div>
+    <section id="productos" aria-live="polite">
+      <div class="mensaje">Cargando productos...</div>
+    </section>
+  </main>
+
+  <footer>
+    Ferretería La Casa de Pepe
+  </footer>
+
+  <script>
+    const URL_APPS_SCRIPT =
+      "https://script.google.com/macros/s/AKfycbzDQvqR-gAlHqE-NtH-FIF7vsZEo0EaEE1oHY8ka4IDjTqi7TZ9A3rKooJ0ZGHiDXcsxg/exec";
+
+    const CLAVE_CACHE = "casaPepe_catalogo_v1";
+
+    let catalogo = [];
+
+    const estado = document.getElementById("estado");
+    const contenedor = document.getElementById("productos");
+    const busqueda = document.getElementById("busqueda");
+    const filtroCategoria = document.getElementById("categoria");
+    const contador = document.getElementById("contador");
+
+    function pedirJSONP(accion, tiempoLimite = 15000) {
+      return new Promise((resolve, reject) => {
+        const nombreCallback =
+          "casaPepeCallback_" + Date.now() + "_" +
+          Math.floor(Math.random() * 100000);
+
+        const script = document.createElement("script");
+        const temporizador = setTimeout(() => terminar(
+          new Error("Se agotó el tiempo de conexión.")
+        ), tiempoLimite);
+
+        function terminar(error, datos) {
+          clearTimeout(temporizador);
+          delete window[nombreCallback];
+          script.remove();
+
+          if (error) reject(error);
+          else resolve(datos);
+        }
+
+        window[nombreCallback] = datos => terminar(null, datos);
+
+        script.onerror = () => terminar(
+          new Error("No se pudo conectar con el catálogo.")
+        );
+
+        script.src = URL_APPS_SCRIPT +
+          "?action=" + encodeURIComponent(accion) +
+          "&callback=" + encodeURIComponent(nombreCallback) +
+          "&t=" + Date.now();
+
+        document.head.appendChild(script);
+      });
+    }
+
+    function normalizar(datos) {
+      if (Array.isArray(datos)) return datos;
+
+      if (datos && Array.isArray(datos.productos)) {
+        return datos.productos;
+      }
+
+      if (datos && Array.isArray(datos.catalogo)) {
+        return datos.catalogo;
+      }
+
+      return [];
+    }
+
+    function valor(producto, posiblesNombres) {
+      for (const nombre of posiblesNombres) {
+        if (producto[nombre] !== undefined &&
+            producto[nombre] !== null) {
+          return producto[nombre];
+        }
+      }
+      return "";
+    }
+
+    function obtenerNombre(p) {
+      if (Array.isArray(p)) return p[0] ?? "";
+      if (typeof p === "string") return p;
+      return valor(p, ["producto", "nombre", "Producto", "Nombre", "name"]);
+    }
+
+    function obtenerStock(p) {
+      if (Array.isArray(p)) return p[1] ?? "";
+      return valor(p, ["stock", "existencia", "cantidad", "Stock", "Existencia"]);
+    }
+
+    function obtenerPrecio(p) {
+      if (Array.isArray(p)) return p[2] ?? "";
+      return valor(p, ["precio", "Precio", "price"]);
+    }
+
+    function obtenerCategoria(p) {
+      if (Array.isArray(p)) return p[3] ?? "";
+      return valor(p, ["categoria", "categoría", "Categoria", "Categoría"]);
+    }
+
+    function guardarCatalogo(datos) {
+      try {
+        localStorage.setItem(CLAVE_CACHE, JSON.stringify({
+          fecha: new Date().toISOString(),
+          datos: datos
+        }));
+      } catch (e) {
+        console.warn("No se pudo guardar la copia local.", e);
+      }
+    }
+
+    function cargarCopiaLocal() {
+      try {
+        const copia = JSON.parse(localStorage.getItem(CLAVE_CACHE));
+        if (copia && Array.isArray(copia.datos)) {
+          catalogo = copia.datos;
+          mostrarCategorias();
+          mostrarProductos();
+          estado.textContent =
+            "Sin conexión: mostrando el último catálogo guardado.";
+          return true;
+        }
+      } catch (e) {
+        console.warn("No se pudo leer la copia local.", e);
+      }
+      return false;
+    }
+
+    async function actualizarCatalogo() {
+      try {
+        const datos = await pedirJSONP("catalogo");
+        const lista = normalizar(datos);
+
+        if (!lista.length) {
+          throw new Error("El catálogo recibido está vacío o tiene un formato distinto.");
+        }
+
+        catalogo = lista;
+        guardarCatalogo(lista);
+        mostrarCategorias();
+        mostrarProductos();
+
+        estado.textContent =
+          "Catálogo actualizado desde Google Sheets.";
+      } catch (error) {
+        if (!cargarCopiaLocal()) {
+          estado.textContent =
+            "No se pudo cargar el catálogo. Comprueba tu conexión.";
+          contenedor.innerHTML =
+            '<div class="mensaje">No hay un catálogo guardado disponible.</div>';
+        }
+        console.error(error);
+      }
+    }
+
+    function mostrarCategorias() {
+      const seleccionAnterior = filtroCategoria.value;
+      const categorias = [...new Set(
+        catalogo.map(obtenerCategoria)
+          .map(c => String(c).trim())
+          .filter(Boolean)
+      )].sort((a, b) => a.localeCompare(b, "es"));
+
+      filtroCategoria.innerHTML =
+        '<option value="">Todas las categorías</option>';
+
+      categorias.forEach(categoria => {
+        const opcion = document.createElement("option");
+        opcion.value = categoria;
+        opcion.textContent = categoria;
+        filtroCategoria.appendChild(opcion);
+      });
+
+      if (categorias.includes(seleccionAnterior)) {
+        filtroCategoria.value = seleccionAnterior;
+      }
+    }
+
+    function textoSeguro(valor) {
+      return String(valor ?? "");
+    }
+
+    function mostrarProductos() {
+      const termino = busqueda.value.trim().toLocaleLowerCase("es");
+      const categoriaElegida = filtroCategoria.value;
+
+      const encontrados = catalogo.filter(p => {
+        const nombre = textoSeguro(obtenerNombre(p));
+        const categoria = textoSeguro(obtenerCategoria(p));
+
+        return nombre.toLocaleLowerCase("es").includes(termino) &&
+          (!categoriaElegida || categoria === categoriaElegida);
+      });
+
+      contador.textContent =
+        encontrados.length + (encontrados.length === 1
+          ? " producto encontrado"
+          : " productos encontrados");
+
+      contenedor.replaceChildren();
+
+      if (!encontrados.length) {
+        const mensaje = document.createElement("div");
+        mensaje.className = "mensaje";
+        mensaje.textContent = "No se encontraron productos.";
+        contenedor.appendChild(mensaje);
+        return;
+      }
+
+      encontrados.forEach(p => {
+        const tarjeta = document.createElement("article");
+        tarjeta.className = "producto";
+
+        const nombre = document.createElement("h3");
+        nombre.textContent = textoSeguro(obtenerNombre(p));
+
+        tarjeta.appendChild(nombre);
+
+        const categoria = textoSeguro(obtenerCategoria(p));
+        if (categoria) {
+          const etiqueta = document.createElement("span");
+          etiqueta.className = "categoria";
+          etiqueta.textContent = categoria;
+          tarjeta.appendChild(etiqueta);
+        }
+
+        const precio = document.createElement("p");
+        precio.className = "precio";
+        const valorPrecio = obtenerPrecio(p);
+        precio.textContent = valorPrecio === ""
+          ? "Precio no disponible"
+          : textoSeguro(valorPrecio);
+        tarjeta.appendChild(precio);
+
+        const stock = document.createElement("p");
+        stock.className = "stock";
+        const valorStock = obtenerStock(p);
+        stock.textContent = valorStock === ""
+          ? "Existencia no disponible"
+          : "Existencia: " + textoSeguro(valorStock);
+        tarjeta.appendChild(stock);
+
+        contenedor.appendChild(tarjeta);
+      });
+    }
+
+    busqueda.addEventListener("input", mostrarProductos);
+    filtroCategoria.addEventListener("change", mostrarProductos);
+
+    // Mostrar primero la copia guardada; luego intentar actualizar.
+    cargarCopiaLocal();
+    actualizarCatalogo();
+
+    // Intentar actualizar cuando vuelve la conexión.
+    window.addEventListener("online", actualizarCatalogo);
+  </script>
+</body>
+</html>
