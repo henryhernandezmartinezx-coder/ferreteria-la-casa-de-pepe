@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "casa-pepe-v1";
+const CACHE_NAME = "casa-pepe-v2";
 const APP_URL = new URL("index.html", self.registration.scope).href;
 
 self.addEventListener("install", event => {
