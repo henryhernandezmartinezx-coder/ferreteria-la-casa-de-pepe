@@ -8,7 +8,9 @@
   <title>Ferretería La Casa de Pepe</title>
 
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       font-family: Arial, sans-serif;
@@ -161,14 +163,105 @@
       cursor: pointer;
     }
 
+    #boton-cambios {
+      display: block;
+      width: 100%;
+      margin: 12px 0;
+      padding: 12px;
+      border: 2px solid #d4a13c;
+      border-radius: 9px;
+      background: #263746;
+      color: #fff;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #boton-cambios:hover {
+      background: #e99d13;
+      color: #202938;
+    }
+
+    #cantidad-cambios {
+      margin-left: 5px;
+      color: #ffd477;
+    }
+
+    #aviso-cambios {
+      margin: 12px 0;
+      padding: 12px;
+      border-left: 4px solid #e99d13;
+      border-radius: 7px;
+      background: rgba(255,255,255,.96);
+      color: #202938;
+      font-weight: bold;
+    }
+
+    #panel-cambios {
+      margin: 12px 0;
+      padding: 14px;
+      border-radius: 9px;
+      background: rgba(255,255,255,.97);
+      color: #202938;
+    }
+
+    #panel-cambios h2 {
+      margin-top: 0;
+      font-size: 19px;
+    }
+
+    .cambio-producto {
+      padding: 10px 0;
+      border-bottom: 1px solid #ddd;
+      overflow-wrap: anywhere;
+    }
+
+    .tipo-cambio {
+      display: inline-block;
+      margin-bottom: 5px;
+      padding: 4px 7px;
+      border-radius: 5px;
+      background: #e5efe7;
+      color: #225a3c;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    #cerrar-cambios {
+      width: 100%;
+      margin-top: 12px;
+      padding: 11px;
+      border: 0;
+      border-radius: 7px;
+      background: #263746;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #panel-cambios[hidden],
+    #aviso-cambios[hidden] {
+      display: none;
+    }
+
     @media (max-width: 420px) {
-      body { padding: 18px 10px; }
-      .botones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .datos { grid-template-columns: 1fr 1fr; }
+      body {
+        padding: 18px 10px;
+      }
+
+      .botones {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .datos {
+        grid-template-columns: 1fr 1fr;
+      }
     }
 
     @media (max-width: 320px) {
-      .datos { grid-template-columns: 1fr; }
+      .datos {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -180,6 +273,26 @@
     <div class="subtitulo">
       Consulta de productos, existencias y precios
     </div>
+
+    <div id="aviso-cambios" role="status" hidden></div>
+
+    <button
+      id="boton-cambios"
+      type="button"
+      aria-expanded="false">
+      🔔 Cambios recientes
+      <span id="cantidad-cambios"></span>
+    </button>
+
+    <section id="panel-cambios" hidden>
+      <h2>Novedades del catálogo</h2>
+      <p id="resumen-cambios"></p>
+      <div id="lista-cambios"></div>
+
+      <button id="cerrar-cambios" type="button">
+        Cerrar novedades
+      </button>
+    </section>
 
     <input
       id="busqueda"
@@ -218,6 +331,7 @@
 
     const CLAVE_CACHE = "casaPepe_catalogo_v1";
     const CLAVE_IMAGEN = "casaPepe_imagen_fondo_v1";
+    const CLAVE_CAMBIOS = "casaPepe_cambios_recientes_v1";
     const LIMITE_INICIAL = 100;
 
     const CATEGORIAS = {
@@ -226,6 +340,7 @@
         "arandela", "arandela de presion", "perno", "pernos",
         "clavo", "puntilla", "tirafondo", "expansion"
       ],
+
       Electricidad: [
         "cable", "electrico", "electricidad", "breaker",
         "caja", "brequera", "tomacorriente", "interruptor",
@@ -237,6 +352,7 @@
         "royal cord", "espiga", "adaptador", "plano",
         "telefono", "cargador", "cuchilla", "catado"
       ],
+
       Herramientas: [
         "martillo", "alicate", "pinza", "destornillador",
         "llave inglesa", "serrucho", "sierra", "lima",
@@ -244,11 +360,13 @@
         "nivel", "stilson", "cincel", "prensa", "tenaza",
         "brocha", "llave ajustable"
       ],
+
       Plomeria: [
         "zapatilla", "pvc", "codo", "empotrar", "teflon",
         "nudo", "niple", "tee", "yee", "tubo", "1/2",
         '1"', "3/4", "tiro rapido", "anti hongo"
       ],
+
       Electrodomesticos: [
         "ventilador", "refrigerador", "nevera", "lavadora",
         "inflarrojo", "batidora", "split", "cafetera",
@@ -268,6 +386,15 @@
     const titulo = document.getElementById("titulo-resultados");
     const botonMas = document.getElementById("mas-resultados");
 
+    const botonCambios = document.getElementById("boton-cambios");
+    const cantidadCambios = document.getElementById("cantidad-cambios");
+    const avisoCambios = document.getElementById("aviso-cambios");
+    const panelCambios = document.getElementById("panel-cambios");
+    const resumenCambios = document.getElementById("resumen-cambios");
+    const listaCambios = document.getElementById("lista-cambios");
+    const cerrarCambios = document.getElementById("cerrar-cambios");
+
+    // Normalizar palabras para comparar sin distinguir tildes ni mayúsculas.
     function normalizar(valor) {
       return String(valor || "")
         .normalize("NFD")
@@ -276,6 +403,7 @@
         .trim();
     }
 
+    // Calcular la distancia entre palabras para tolerar errores de escritura.
     function distancia(a, b) {
       const matriz = Array.from(
         { length: a.length + 1 },
@@ -338,17 +466,11 @@
 
       return terminos.some(terminoOriginal => {
         const termino = normalizar(terminoOriginal);
-
-        if (termino === "t" || termino === "y") {
-          return new RegExp(
-            "(^|[^a-z0-9])" + termino + "($|[^a-z0-9])"
-          ).test(nombre);
-        }
-
         return nombre.includes(termino);
       });
     }
 
+    // Conexión con Google Apps Script usando JSONP.
     function pedirJSONP(accion, tiempoLimite = 25000) {
       return new Promise((resolve, reject) => {
         const callback =
@@ -399,6 +521,7 @@
       return [];
     }
 
+    // Funciones de búsqueda y presentación.
     function actualizar() {
       const consulta = normalizar(entrada.value);
 
@@ -432,7 +555,6 @@
         const nombre = document.createElement("div");
         nombre.className = "nombre";
         nombre.textContent = p.producto;
-        tarjeta.appendChild(nombre);
 
         const datos = document.createElement("div");
         datos.className = "datos";
@@ -445,7 +567,7 @@
           crearDato("Precio", p.precio || "Consultar")
         );
 
-        tarjeta.appendChild(datos);
+        tarjeta.append(nombre, datos);
         resultados.appendChild(tarjeta);
       });
 
@@ -473,6 +595,31 @@
 
       caja.append(tituloDato, valorDato);
       return caja;
+    }
+
+    // Lectura y guardado de la copia local del catálogo.
+    function leerCatalogoAnterior() {
+      try {
+        const guardado = localStorage.getItem(CLAVE_CACHE);
+        if (!guardado) return null;
+
+        const copia = JSON.parse(guardado);
+
+        const datos = Array.isArray(copia)
+          ? copia
+          : copia && Array.isArray(copia.datos)
+            ? copia.datos
+            : null;
+
+        if (!datos) return null;
+
+        return datos.filter(p =>
+          p && typeof p.producto === "string"
+        );
+      } catch (error) {
+        console.error("No se pudo leer el catálogo anterior:", error);
+        return null;
+      }
     }
 
     function guardarCatalogo(datos) {
@@ -519,19 +666,233 @@
       }
     }
 
+    // Comparar la versión anterior con la nueva.
+    function compararCatalogos(anterior, nuevo) {
+      const mapaAnterior = new Map();
+      const mapaNuevo = new Map();
+      const cambios = [];
+
+      anterior.forEach(p => {
+        if (p && p.producto) {
+          mapaAnterior.set(normalizar(p.producto), p);
+        }
+      });
+
+      nuevo.forEach(p => {
+        if (p && p.producto) {
+          mapaNuevo.set(normalizar(p.producto), p);
+        }
+      });
+
+      mapaNuevo.forEach((producto, clave) => {
+        const viejo = mapaAnterior.get(clave);
+
+        if (!viejo) {
+          cambios.push({
+            tipo: "Añadido",
+            producto: producto.producto,
+            detalles: "Producto añadido al catálogo."
+          });
+          return;
+        }
+
+        const detalles = [];
+
+        if (String(viejo.existencia ?? "") !==
+            String(producto.existencia ?? "")) {
+          detalles.push(
+            "Existencia: " + (viejo.existencia || "vacía") +
+            " → " + (producto.existencia || "vacía")
+          );
+        }
+
+        if (String(viejo.precio ?? "") !==
+            String(producto.precio ?? "")) {
+          detalles.push(
+            "Precio: " + (viejo.precio || "vacío") +
+            " → " + (producto.precio || "vacío")
+          );
+        }
+
+        if (detalles.length) {
+          cambios.push({
+            tipo: "Modificado",
+            producto: producto.producto,
+            detalles: detalles.join(" | ")
+          });
+        }
+      });
+
+      mapaAnterior.forEach((producto, clave) => {
+        if (!mapaNuevo.has(clave)) {
+          cambios.push({
+            tipo: "Eliminado",
+            producto: producto.producto,
+            detalles: "El producto ya no aparece en el catálogo."
+          });
+        }
+      });
+
+      return cambios;
+    }
+
+    // Informe de las novedades detectadas.
+    function leerInformeCambios() {
+      try {
+        return JSON.parse(localStorage.getItem(CLAVE_CAMBIOS)) || null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function actualizarBotonCambios() {
+      const informe = leerInformeCambios();
+      const cantidad = informe && Array.isArray(informe.cambios)
+        ? informe.cambios.length
+        : 0;
+
+      cantidadCambios.textContent =
+        cantidad ? "(" + cantidad + ")" : "";
+    }
+
+    function guardarInformeCambios(cambios) {
+      const informe = {
+        fecha: new Date().toISOString(),
+        cambios: cambios
+      };
+
+      try {
+        localStorage.setItem(CLAVE_CAMBIOS, JSON.stringify(informe));
+      } catch (error) {
+        console.error("No se pudo guardar el informe:", error);
+      }
+
+      actualizarBotonCambios();
+    }
+
+    function mostrarAvisoCambios(cambios) {
+      const añadidos = cambios.filter(c => c.tipo === "Añadido").length;
+      const modificados = cambios.filter(c => c.tipo === "Modificado").length;
+      const eliminados = cambios.filter(c => c.tipo === "Eliminado").length;
+      const partes = [];
+
+      if (añadidos) {
+        partes.push("se añadieron " + añadidos + " productos");
+      }
+
+      if (modificados) {
+        partes.push("se modificaron " + modificados + " productos");
+      }
+
+      if (eliminados) {
+        partes.push("se eliminaron " + eliminados + " productos");
+      }
+
+      avisoCambios.textContent =
+        "Novedades detectadas: " + partes.join(", ") + ".";
+
+      avisoCambios.hidden = false;
+    }
+
+    function abrirPanelCambios() {
+      const informe = leerInformeCambios();
+
+      panelCambios.hidden = false;
+      botonCambios.setAttribute("aria-expanded", "true");
+      listaCambios.replaceChildren();
+
+      if (!informe || !Array.isArray(informe.cambios) ||
+          informe.cambios.length === 0) {
+        resumenCambios.textContent =
+          "Todavía no hay cambios registrados. Se necesita una copia anterior para comparar.";
+        return;
+      }
+
+      const fecha = new Date(informe.fecha);
+
+      resumenCambios.textContent =
+        "Última comparación: " +
+        (Number.isNaN(fecha.getTime())
+          ? "fecha desconocida"
+          : fecha.toLocaleString("es"));
+
+      const añadidos = informe.cambios.filter(c => c.tipo === "Añadido").length;
+      const modificados = informe.cambios.filter(c => c.tipo === "Modificado").length;
+      const eliminados = informe.cambios.filter(c => c.tipo === "Eliminado").length;
+
+      resumenCambios.textContent +=
+        " — Añadidos: " + añadidos +
+        ", modificados: " + modificados +
+        ", eliminados: " + eliminados + ".";
+
+      informe.cambios.slice(0, 100).forEach(cambio => {
+        const fila = document.createElement("div");
+        fila.className = "cambio-producto";
+
+        const tipo = document.createElement("span");
+        tipo.className = "tipo-cambio";
+        tipo.textContent = cambio.tipo;
+
+        const nombre = document.createElement("div");
+        nombre.textContent = cambio.producto;
+
+        const detalles = document.createElement("div");
+        detalles.textContent = cambio.detalles;
+
+        fila.append(tipo, nombre, detalles);
+        listaCambios.appendChild(fila);
+      });
+
+      if (informe.cambios.length > 100) {
+        const nota = document.createElement("p");
+        nota.textContent =
+          "Se muestran los primeros 100 cambios de " +
+          informe.cambios.length + " registrados.";
+        listaCambios.appendChild(nota);
+      }
+    }
+
+    botonCambios.addEventListener("click", () => {
+      if (panelCambios.hidden) {
+        abrirPanelCambios();
+      } else {
+        panelCambios.hidden = true;
+        botonCambios.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    cerrarCambios.addEventListener("click", () => {
+      panelCambios.hidden = true;
+      botonCambios.setAttribute("aria-expanded", "false");
+    });
+
+    actualizarBotonCambios();
+
+    // Descargar, comparar y guardar el catálogo actualizado.
     async function actualizarCatalogo() {
       try {
         const datos = await pedirJSONP("catalogo");
-        const lista = normalizarCatalogo(datos);
+        const lista = normalizarCatalogo(datos).filter(p =>
+          p && typeof p.producto === "string"
+        );
 
         if (!lista.length) {
           throw new Error("El catálogo recibido está vacío.");
         }
 
-        catalogo = lista.filter(p =>
-          p && typeof p.producto === "string"
-        );
+        // Leer la copia anterior ANTES de guardar la nueva.
+        const anterior = leerCatalogoAnterior();
 
+        if (anterior && anterior.length > 0) {
+          const cambios = compararCatalogos(anterior, lista);
+
+          if (cambios.length > 0) {
+            guardarInformeCambios(cambios);
+            mostrarAvisoCambios(cambios);
+          }
+        }
+
+        catalogo = lista;
         guardarCatalogo(catalogo);
         actualizar();
 
@@ -542,17 +903,17 @@
       } catch (error) {
         if (catalogo.length) {
           estado.textContent =
-            "Sin actualización del servidor. " +
-            "Usando los productos guardados.";
+            "Sin actualización del servidor. Usando los productos guardados.";
         } else {
           estado.textContent =
             "No se pudo cargar el catálogo. Comprueba internet.";
         }
 
-        console.error(error);
+        console.error("Error al actualizar el catálogo:", error);
       }
     }
 
+    // Imagen de fondo: guardar una copia local para uso sin internet.
     function aplicarImagenFondo(imagen) {
       if (typeof imagen !== "string" ||
           !imagen.startsWith("data:image/")) {
@@ -600,6 +961,7 @@
       }
     }
 
+    // Eventos del buscador y de las categorías.
     document.getElementById("botones").addEventListener("click", evento => {
       const boton = evento.target.closest("button[data-categoria]");
       if (!boton) return;
@@ -624,27 +986,32 @@
       mostrarResultados();
     });
 
-    // Recuperar primero la copia guardada en el dispositivo.
+    // Iniciar con los datos guardados mientras llega la actualización.
     cargarImagenGuardada();
     cargarCopiaLocal();
 
-    // Después intentar actualizar los datos y la imagen.
     actualizarCatalogo();
     actualizarImagenFondo();
 
+    // Actualizar cuando vuelva la conexión a internet.
     window.addEventListener("online", () => {
       actualizarCatalogo();
       actualizarImagenFondo();
     });
 
-    // Activar el funcionamiento sin conexión.
+    // Mantener activo el funcionamiento sin conexión.
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("sw.js")
-          .then(() => console.log("Modo sin conexión preparado."))
-          .catch(error => console.error(
-            "Error al activar el modo sin conexión:", error
-          ));
+          .then(() => {
+            console.log("Modo sin conexión preparado.");
+          })
+          .catch(error => {
+            console.error(
+              "Error al activar el modo sin conexión:",
+              error
+            );
+          });
       });
     }
   </script>
