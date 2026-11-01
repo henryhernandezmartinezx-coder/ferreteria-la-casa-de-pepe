@@ -163,6 +163,8 @@
       cursor: pointer;
     }
 
+    /* BOTÓN DE NOVEDADES */
+
     #boton-cambios {
       display: block;
       width: 100%;
@@ -326,12 +328,17 @@
   </main>
 
   <script>
+    // ======================================
+    // CONFIGURACIÓN
+    // ======================================
+
     const URL_APPS_SCRIPT =
       "https://script.google.com/macros/s/AKfycbzDQvqR-gAlHqE-NtH-FIF7vsZEo0EaEE1oHY8ka4IDjTqi7TZ9A3rKooJ0ZGHiDXcsxg/exec";
 
     const CLAVE_CACHE = "casaPepe_catalogo_v1";
     const CLAVE_IMAGEN = "casaPepe_imagen_fondo_v1";
     const CLAVE_CAMBIOS = "casaPepe_cambios_recientes_v1";
+
     const LIMITE_INICIAL = 100;
 
     const CATEGORIAS = {
@@ -394,7 +401,11 @@
     const listaCambios = document.getElementById("lista-cambios");
     const cerrarCambios = document.getElementById("cerrar-cambios");
 
-    // Normalizar palabras para comparar sin distinguir tildes ni mayúsculas.
+
+    // ======================================
+    // FUNCIONES GENERALES
+    // ======================================
+
     function normalizar(valor) {
       return String(valor || "")
         .normalize("NFD")
@@ -403,15 +414,19 @@
         .trim();
     }
 
-    // Calcular la distancia entre palabras para tolerar errores de escritura.
     function distancia(a, b) {
       const matriz = Array.from(
         { length: a.length + 1 },
         () => Array(b.length + 1).fill(0)
       );
 
-      for (let i = 0; i <= a.length; i++) matriz[i][0] = i;
-      for (let j = 0; j <= b.length; j++) matriz[0][j] = j;
+      for (let i = 0; i <= a.length; i++) {
+        matriz[i][0] = i;
+      }
+
+      for (let j = 0; j <= b.length; j++) {
+        matriz[0][j] = j;
+      }
 
       for (let i = 1; i <= a.length; i++) {
         for (let j = 1; j <= b.length; j++) {
@@ -470,7 +485,11 @@
       });
     }
 
-    // Conexión con Google Apps Script usando JSONP.
+
+    // ======================================
+    // CONEXIÓN CON GOOGLE APPS SCRIPT
+    // ======================================
+
     function pedirJSONP(accion, tiempoLimite = 25000) {
       return new Promise((resolve, reject) => {
         const callback =
@@ -521,7 +540,11 @@
       return [];
     }
 
-    // Funciones de búsqueda y presentación.
+
+    // ======================================
+    // BUSCADOR Y PRESENTACIÓN
+    // ======================================
+
     function actualizar() {
       const consulta = normalizar(entrada.value);
 
@@ -597,10 +620,15 @@
       return caja;
     }
 
-    // Lectura y guardado de la copia local del catálogo.
+
+    // ======================================
+    // CATÁLOGO LOCAL
+    // ======================================
+
     function leerCatalogoAnterior() {
       try {
         const guardado = localStorage.getItem(CLAVE_CACHE);
+
         if (!guardado) return null;
 
         const copia = JSON.parse(guardado);
@@ -616,10 +644,24 @@
         return datos.filter(p =>
           p && typeof p.producto === "string"
         );
+
       } catch (error) {
-        console.error("No se pudo leer el catálogo anterior:", error);
+        console.error(
+          "No se pudo leer el catálogo anterior:",
+          error
+        );
+
         return null;
       }
+    }
+
+    function catalogoTieneIDs(lista) {
+      return Array.isArray(lista) &&
+        lista.length > 0 &&
+        lista.every(p =>
+          p &&
+          String(p.id || "").trim() !== ""
+        );
     }
 
     function guardarCatalogo(datos) {
@@ -628,14 +670,19 @@
           fecha: new Date().toISOString(),
           datos: datos
         }));
+
       } catch (error) {
-        console.error("No se pudo guardar el catálogo:", error);
+        console.error(
+          "No se pudo guardar el catálogo:",
+          error
+        );
       }
     }
 
     function cargarCopiaLocal() {
       try {
         const guardado = localStorage.getItem(CLAVE_CACHE);
+
         if (!guardado) return false;
 
         const copia = JSON.parse(guardado);
@@ -660,71 +707,117 @@
           " productos.";
 
         return true;
+
       } catch (error) {
-        console.error("Error al recuperar el catálogo:", error);
+        console.error(
+          "Error al recuperar el catálogo:",
+          error
+        );
+
         return false;
       }
     }
 
-    // Comparar la versión anterior con la nueva.
+
+    // ======================================
+    // COMPARADOR CON IDENTIFICADORES ÚNICOS
+    // ======================================
+
     function compararCatalogos(anterior, nuevo) {
       const mapaAnterior = new Map();
       const mapaNuevo = new Map();
       const cambios = [];
 
+      if (!catalogoTieneIDs(anterior) ||
+          !catalogoTieneIDs(nuevo)) {
+        return null;
+      }
+
       anterior.forEach(p => {
-        if (p && p.producto) {
-          mapaAnterior.set(normalizar(p.producto), p);
-        }
+        mapaAnterior.set(String(p.id), p);
       });
 
       nuevo.forEach(p => {
-        if (p && p.producto) {
-          mapaNuevo.set(normalizar(p.producto), p);
-        }
+        mapaNuevo.set(String(p.id), p);
       });
 
-      mapaNuevo.forEach((producto, clave) => {
-        const viejo = mapaAnterior.get(clave);
+      // Revisar productos actuales.
+      mapaNuevo.forEach((producto, id) => {
+        const viejo = mapaAnterior.get(id);
 
+        // Producto con ID que antes no existía.
         if (!viejo) {
           cambios.push({
             tipo: "Añadido",
             producto: producto.producto,
             detalles: "Producto añadido al catálogo."
           });
+
           return;
         }
 
         const detalles = [];
 
-        if (String(viejo.existencia ?? "") !==
-            String(producto.existencia ?? "")) {
+        const nombreAnterior =
+          String(viejo.producto || "").trim();
+
+        const nombreNuevo =
+          String(producto.producto || "").trim();
+
+        const fueRenombrado =
+          nombreAnterior !== nombreNuevo;
+
+        if (fueRenombrado) {
           detalles.push(
-            "Existencia: " + (viejo.existencia || "vacía") +
-            " → " + (producto.existencia || "vacía")
+            "Nombre: " + nombreAnterior +
+            " → " + nombreNuevo
           );
         }
 
-        if (String(viejo.precio ?? "") !==
-            String(producto.precio ?? "")) {
+        if (
+          String(viejo.existencia ?? "") !==
+          String(producto.existencia ?? "")
+        ) {
           detalles.push(
-            "Precio: " + (viejo.precio || "vacío") +
-            " → " + (producto.precio || "vacío")
+            "Existencia: " +
+            (viejo.existencia || "vacía") +
+            " → " +
+            (producto.existencia || "vacía")
           );
         }
 
-        if (detalles.length) {
+        if (
+          String(viejo.precio ?? "") !==
+          String(producto.precio ?? "")
+        ) {
+          detalles.push(
+            "Precio: " +
+            (viejo.precio || "vacío") +
+            " → " +
+            (producto.precio || "vacío")
+          );
+        }
+
+        if (detalles.length > 0) {
+          let tipo = "Modificado";
+
+          if (fueRenombrado && detalles.length > 1) {
+            tipo = "Renombrado y modificado";
+          } else if (fueRenombrado) {
+            tipo = "Renombrado";
+          }
+
           cambios.push({
-            tipo: "Modificado",
+            tipo: tipo,
             producto: producto.producto,
             detalles: detalles.join(" | ")
           });
         }
       });
 
-      mapaAnterior.forEach((producto, clave) => {
-        if (!mapaNuevo.has(clave)) {
+      // Buscar productos que realmente desaparecieron.
+      mapaAnterior.forEach((producto, id) => {
+        if (!mapaNuevo.has(id)) {
           cambios.push({
             tipo: "Eliminado",
             producto: producto.producto,
@@ -736,20 +829,34 @@
       return cambios;
     }
 
-    // Informe de las novedades detectadas.
+
+    // ======================================
+    // INFORME DE NOVEDADES
+    // ======================================
+
     function leerInformeCambios() {
       try {
-        return JSON.parse(localStorage.getItem(CLAVE_CAMBIOS)) || null;
+        return JSON.parse(
+          localStorage.getItem(CLAVE_CAMBIOS)
+        ) || null;
+
       } catch (error) {
         return null;
       }
     }
 
+    function esRenombrado(cambio) {
+      return cambio.tipo === "Renombrado" ||
+        cambio.tipo === "Renombrado y modificado";
+    }
+
     function actualizarBotonCambios() {
       const informe = leerInformeCambios();
-      const cantidad = informe && Array.isArray(informe.cambios)
-        ? informe.cambios.length
-        : 0;
+
+      const cantidad =
+        informe && Array.isArray(informe.cambios)
+          ? informe.cambios.length
+          : 0;
 
       cantidadCambios.textContent =
         cantidad ? "(" + cantidad + ")" : "";
@@ -762,34 +869,72 @@
       };
 
       try {
-        localStorage.setItem(CLAVE_CAMBIOS, JSON.stringify(informe));
+        localStorage.setItem(
+          CLAVE_CAMBIOS,
+          JSON.stringify(informe)
+        );
+
       } catch (error) {
-        console.error("No se pudo guardar el informe:", error);
+        console.error(
+          "No se pudo guardar el informe:",
+          error
+        );
       }
 
       actualizarBotonCambios();
     }
 
+    function contarCambios(cambios) {
+      return {
+        añadidos: cambios.filter(
+          c => c.tipo === "Añadido"
+        ).length,
+
+        renombrados: cambios.filter(
+          esRenombrado
+        ).length,
+
+        modificados: cambios.filter(
+          c => c.tipo === "Modificado"
+        ).length,
+
+        eliminados: cambios.filter(
+          c => c.tipo === "Eliminado"
+        ).length
+      };
+    }
+
     function mostrarAvisoCambios(cambios) {
-      const añadidos = cambios.filter(c => c.tipo === "Añadido").length;
-      const modificados = cambios.filter(c => c.tipo === "Modificado").length;
-      const eliminados = cambios.filter(c => c.tipo === "Eliminado").length;
+      const conteo = contarCambios(cambios);
       const partes = [];
 
-      if (añadidos) {
-        partes.push("se añadieron " + añadidos + " productos");
+      if (conteo.añadidos) {
+        partes.push(
+          "se añadieron " + conteo.añadidos + " productos"
+        );
       }
 
-      if (modificados) {
-        partes.push("se modificaron " + modificados + " productos");
+      if (conteo.renombrados) {
+        partes.push(
+          "se renombraron " + conteo.renombrados + " productos"
+        );
       }
 
-      if (eliminados) {
-        partes.push("se eliminaron " + eliminados + " productos");
+      if (conteo.modificados) {
+        partes.push(
+          "se modificaron " + conteo.modificados + " productos"
+        );
+      }
+
+      if (conteo.eliminados) {
+        partes.push(
+          "se eliminaron " + conteo.eliminados + " productos"
+        );
       }
 
       avisoCambios.textContent =
-        "Novedades detectadas: " + partes.join(", ") + ".";
+        "Novedades detectadas: " +
+        partes.join(", ") + ".";
 
       avisoCambios.hidden = false;
     }
@@ -798,32 +943,39 @@
       const informe = leerInformeCambios();
 
       panelCambios.hidden = false;
-      botonCambios.setAttribute("aria-expanded", "true");
+
+      botonCambios.setAttribute(
+        "aria-expanded",
+        "true"
+      );
+
       listaCambios.replaceChildren();
 
-      if (!informe || !Array.isArray(informe.cambios) ||
+      if (!informe ||
+          !Array.isArray(informe.cambios) ||
           informe.cambios.length === 0) {
+
         resumenCambios.textContent =
-          "Todavía no hay cambios registrados. Se necesita una copia anterior para comparar.";
+          "Todavía no hay cambios registrados. " +
+          "Se necesita una comparación anterior.";
+
         return;
       }
 
       const fecha = new Date(informe.fecha);
 
+      const fechaTexto = Number.isNaN(fecha.getTime())
+        ? "fecha desconocida"
+        : fecha.toLocaleString("es");
+
+      const conteo = contarCambios(informe.cambios);
+
       resumenCambios.textContent =
-        "Última comparación: " +
-        (Number.isNaN(fecha.getTime())
-          ? "fecha desconocida"
-          : fecha.toLocaleString("es"));
-
-      const añadidos = informe.cambios.filter(c => c.tipo === "Añadido").length;
-      const modificados = informe.cambios.filter(c => c.tipo === "Modificado").length;
-      const eliminados = informe.cambios.filter(c => c.tipo === "Eliminado").length;
-
-      resumenCambios.textContent +=
-        " — Añadidos: " + añadidos +
-        ", modificados: " + modificados +
-        ", eliminados: " + eliminados + ".";
+        "Última comparación: " + fechaTexto +
+        " — Añadidos: " + conteo.añadidos +
+        ", renombrados: " + conteo.renombrados +
+        ", modificados: " + conteo.modificados +
+        ", eliminados: " + conteo.eliminados + ".";
 
       informe.cambios.slice(0, 100).forEach(cambio => {
         const fila = document.createElement("div");
@@ -840,14 +992,17 @@
         detalles.textContent = cambio.detalles;
 
         fila.append(tipo, nombre, detalles);
+
         listaCambios.appendChild(fila);
       });
 
       if (informe.cambios.length > 100) {
         const nota = document.createElement("p");
+
         nota.textContent =
           "Se muestran los primeros 100 cambios de " +
           informe.cambios.length + " registrados.";
+
         listaCambios.appendChild(nota);
       }
     }
@@ -855,65 +1010,127 @@
     botonCambios.addEventListener("click", () => {
       if (panelCambios.hidden) {
         abrirPanelCambios();
+
       } else {
         panelCambios.hidden = true;
-        botonCambios.setAttribute("aria-expanded", "false");
+
+        botonCambios.setAttribute(
+          "aria-expanded",
+          "false"
+        );
       }
     });
 
     cerrarCambios.addEventListener("click", () => {
       panelCambios.hidden = true;
-      botonCambios.setAttribute("aria-expanded", "false");
+
+      botonCambios.setAttribute(
+        "aria-expanded",
+        "false"
+      );
     });
 
     actualizarBotonCambios();
 
-    // Descargar, comparar y guardar el catálogo actualizado.
+
+    // ======================================
+    // ACTUALIZACIÓN Y COMPARACIÓN DEL CATÁLOGO
+    // ======================================
+
     async function actualizarCatalogo() {
       try {
         const datos = await pedirJSONP("catalogo");
+
         const lista = normalizarCatalogo(datos).filter(p =>
           p && typeof p.producto === "string"
         );
 
         if (!lista.length) {
-          throw new Error("El catálogo recibido está vacío.");
+          throw new Error(
+            "El catálogo recibido está vacío."
+          );
         }
 
-        // Leer la copia anterior ANTES de guardar la nueva.
+        if (!catalogoTieneIDs(lista)) {
+          throw new Error(
+            "Google Apps Script no está enviando los identificadores de los productos."
+          );
+        }
+
+        // Leer el catálogo anterior antes de guardar el nuevo.
         const anterior = leerCatalogoAnterior();
 
         if (anterior && anterior.length > 0) {
-          const cambios = compararCatalogos(anterior, lista);
 
-          if (cambios.length > 0) {
-            guardarInformeCambios(cambios);
-            mostrarAvisoCambios(cambios);
+          if (catalogoTieneIDs(anterior)) {
+
+            const cambios = compararCatalogos(
+              anterior,
+              lista
+            );
+
+            if (cambios && cambios.length > 0) {
+              guardarInformeCambios(cambios);
+              mostrarAvisoCambios(cambios);
+            }
+
+          } else {
+            /*
+             * La copia anterior no tenía identificadores.
+             * Esta actualización establece la nueva referencia.
+             * No se cuentan falsos añadidos ni eliminados.
+             */
+
+            localStorage.removeItem(CLAVE_CAMBIOS);
+
+            avisoCambios.hidden = true;
+
+            actualizarBotonCambios();
+
+            estado.textContent =
+              "Preparando la nueva comparación con identificadores.";
           }
+
+        } else {
+          // Primera sincronización en este dispositivo.
+          avisoCambios.hidden = true;
         }
 
+        // Guardar la nueva versión después de comparar.
         catalogo = lista;
+
         guardarCatalogo(catalogo);
+
         actualizar();
 
         estado.textContent =
           "Catálogo actualizado desde Google Sheets: " +
           catalogo.length.toLocaleString("es") +
           " productos.";
+
       } catch (error) {
         if (catalogo.length) {
           estado.textContent =
-            "Sin actualización del servidor. Usando los productos guardados.";
+            "Sin actualización del servidor. " +
+            "Usando los productos guardados.";
+
         } else {
           estado.textContent =
             "No se pudo cargar el catálogo. Comprueba internet.";
         }
 
-        console.error("Error al actualizar el catálogo:", error);
+        console.error(
+          "Error al actualizar el catálogo:",
+          error
+        );
       }
     }
 
-    // Imagen de fondo: guardar una copia local para uso sin internet.
+
+    // ======================================
+    // IMAGEN DE FONDO Y COPIA SIN INTERNET
+    // ======================================
+
     function aplicarImagenFondo(imagen) {
       if (typeof imagen !== "string" ||
           !imagen.startsWith("data:image/")) {
@@ -928,83 +1145,133 @@
     function cargarImagenGuardada() {
       try {
         const imagen = localStorage.getItem(CLAVE_IMAGEN);
-        if (imagen) aplicarImagenFondo(imagen);
+
+        if (imagen) {
+          aplicarImagenFondo(imagen);
+        }
+
       } catch (error) {
-        console.warn("No se pudo recuperar la imagen guardada.", error);
+        console.warn(
+          "No se pudo recuperar la imagen guardada.",
+          error
+        );
       }
     }
 
     async function actualizarImagenFondo() {
       try {
-        const respuesta = await pedirJSONP("imagen", 30000);
+        const respuesta = await pedirJSONP(
+          "imagen",
+          30000
+        );
 
         const imagen = typeof respuesta === "string"
           ? respuesta
           : respuesta && (respuesta.imagen || respuesta.url);
 
-        if (!imagen || !String(imagen).startsWith("data:image/")) {
-          throw new Error("La respuesta no contiene una imagen válida.");
+        if (!imagen ||
+            !String(imagen).startsWith("data:image/")) {
+          throw new Error(
+            "La respuesta no contiene una imagen válida."
+          );
         }
 
         aplicarImagenFondo(imagen);
 
         try {
-          localStorage.setItem(CLAVE_IMAGEN, imagen);
+          localStorage.setItem(
+            CLAVE_IMAGEN,
+            imagen
+          );
+
         } catch (error) {
           console.warn(
             "La imagen se mostró, pero no pudo guardarse para uso sin conexión.",
             error
           );
         }
+
       } catch (error) {
-        console.warn("No se pudo actualizar la imagen de fondo:", error);
+        console.warn(
+          "No se pudo actualizar la imagen de fondo:",
+          error
+        );
       }
     }
 
-    // Eventos del buscador y de las categorías.
-    document.getElementById("botones").addEventListener("click", evento => {
-      const boton = evento.target.closest("button[data-categoria]");
-      if (!boton) return;
 
-      categoriaActiva = boton.dataset.categoria;
+    // ======================================
+    // EVENTOS DEL BUSCADOR
+    // ======================================
 
-      document.querySelectorAll("#botones button").forEach(b => {
-        b.classList.toggle("activo", b === boton);
-      });
+    document.getElementById("botones").addEventListener(
+      "click",
+      evento => {
+        const boton = evento.target.closest(
+          "button[data-categoria]"
+        );
 
-      entrada.value = "";
-      actualizar();
-    });
+        if (!boton) return;
+
+        categoriaActiva = boton.dataset.categoria;
+
+        document.querySelectorAll(
+          "#botones button"
+        ).forEach(b => {
+          b.classList.toggle(
+            "activo",
+            b === boton
+          );
+        });
+
+        entrada.value = "";
+
+        actualizar();
+      }
+    );
 
     entrada.addEventListener("input", () => {
       clearTimeout(temporizador);
-      temporizador = setTimeout(actualizar, 120);
+
+      temporizador = setTimeout(
+        actualizar,
+        120
+      );
     });
 
     botonMas.addEventListener("click", () => {
       cantidadVisible += LIMITE_INICIAL;
+
       mostrarResultados();
     });
 
-    // Iniciar con los datos guardados mientras llega la actualización.
+
+    // ======================================
+    // INICIO DE LA PÁGINA
+    // ======================================
+
+    // Primero mostrar las copias locales.
     cargarImagenGuardada();
     cargarCopiaLocal();
 
+    // Después actualizar desde Google Sheets.
     actualizarCatalogo();
     actualizarImagenFondo();
 
-    // Actualizar cuando vuelva la conexión a internet.
+    // Actualizar cuando regrese internet.
     window.addEventListener("online", () => {
       actualizarCatalogo();
       actualizarImagenFondo();
     });
 
-    // Mantener activo el funcionamiento sin conexión.
+    // Mantener el funcionamiento sin conexión.
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("sw.js")
           .then(() => {
-            console.log("Modo sin conexión preparado.");
+            console.log(
+              "Modo sin conexión preparado."
+            );
           })
           .catch(error => {
             console.error(
