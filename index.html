@@ -1246,6 +1246,14 @@
         120
       );
     });
+    entrada.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    clearTimeout(temporizador);
+    actualizar();
+    entrada.blur();
+  }
+});
 
     botonMas.addEventListener("click", () => {
       cantidadVisible += LIMITE_INICIAL;
